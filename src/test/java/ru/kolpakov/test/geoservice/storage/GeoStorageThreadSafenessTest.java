@@ -31,8 +31,8 @@ public class GeoStorageThreadSafenessTest {
 
     @Test
     public void concurrentAddTest() {
-        IntStream.range(0, 5).parallel()
-                .mapToObj(indexOfConcurrentWrite -> IntStream.rangeClosed(1, 10_000)
+        IntStream.range(0, 10).parallel()
+                .mapToObj(indexOfConcurrentWrite -> IntStream.rangeClosed(1, 100_000)
                         .mapToObj(i -> new UserLabel(i,
                                 indexOfConcurrentWrite + i % 10 + Math.random(),
                                 indexOfConcurrentWrite + i % 20 + Math.random())))
@@ -44,15 +44,15 @@ public class GeoStorageThreadSafenessTest {
                         throw new RuntimeException(e);
                     }
                 });
-        int numberOfUls = IntStream.range(0, 14)
+        int numberOfUls = IntStream.range(0, 19)
                 .boxed()
                 .parallel()
-                .flatMap(i -> IntStream.range(0, 24).mapToObj(j -> new Coordinates(i, j)))
+                .flatMap(i -> IntStream.range(0, 29).mapToObj(j -> new Coordinates(i, j)))
                 .map(c -> storageService.countInGeoCell(c.getX(), c.getY()))
                 .reduce(Integer::sum)
                 .orElse(-1);
-        assertEquals(numberOfUls, 10_000);
-        IntStream.rangeClosed(1, 10_000).parallel()
+        assertEquals(numberOfUls, 100_000);
+        IntStream.rangeClosed(1, 100_000).parallel()
                 .forEach(i -> {
                     try {
                         assertTrue(storageService.deleteUser(i).isPresent());
@@ -97,10 +97,10 @@ public class GeoStorageThreadSafenessTest {
     static class ServiceTestConfiguration {
         @Bean
         ConcurrentMap<Coordinates, GeoCellValues> geoCells() {
-            return IntStream.rangeClosed(0, 14)
+            return IntStream.rangeClosed(0, 19)
                     .boxed()
                     .parallel()
-                    .flatMap(i -> IntStream.rangeClosed(0, 24).mapToObj(j -> new Coordinates(i, j)))
+                    .flatMap(i -> IntStream.rangeClosed(0, 29).mapToObj(j -> new Coordinates(i, j)))
                     .collect(Collectors.toConcurrentMap(Function.identity(), c -> new GeoCellValues(10.0)));
         }
 
