@@ -63,6 +63,22 @@ public class GeoStorageThreadSafenessTest {
     }
 
     @Test
+    public void concurrentSingleIdAddTest() throws InterruptedException {
+        IntStream.range(0, 10_000)
+                .parallel()
+                .mapToObj(i -> new UserLabel(1, Math.random(), Math.random()))
+                .forEach(ul -> {
+                    try {
+                        storageService.upsertUser(ul);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+        assertEquals(storageService.countInGeoCell(0, 0), 1);
+        assertTrue(storageService.deleteUser(1).isPresent());
+    }
+
+    @Test
     public void concurrentTest() {
         Set<UserLabel> userLabels = IntStream.rangeClosed(1, 10_000)
                 .parallel()
